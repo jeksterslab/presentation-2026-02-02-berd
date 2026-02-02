@@ -1,0 +1,164 @@
+---
+title: "Uncertainty Quantification in CT-Med (Centrality Measures)"
+format:
+  html:
+    embed-resources: true
+editor: source
+author: Ivan Jacob Agaloos Pesigan
+date: February 2, 2026
+---
+
+## Install the cTMed package
+
+```{r, include = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
+pkg <- "cTMed"
+for (i in seq_along(pkg)) {
+  if (!require(pkg[i], character.only = TRUE, quietly = TRUE)) {
+    install.packages(pkg[i], dependencies = TRUE)
+  }
+}
+```
+
+```{r}
+library(cTMed)
+```
+
+## Extracting Matrices for Use in `cTMed`
+
+After fitting, we extract the estimated drift matrix ($\boldsymbol{\Phi}$) and process noise covariance ($\boldsymbol{\Sigma}$), along with their sampling covariance matrices.
+
+```{r}
+fn <- "fit-ct-var-dynr.Rds"
+fit <- readRDS(fn)
+summary(fit)
+```
+
+```{r}
+coefs <- coef(fit)
+vcovs <- vcov(fit)
+phi_names <- c(
+  "phi_1_1", "phi_2_1", "phi_3_1",
+  "phi_1_2", "phi_2_2", "phi_3_2",
+  "phi_1_3", "phi_2_3", "phi_3_3"
+)
+sigma_names <- c(
+  "sigma_1_1", "sigma_2_1", "sigma_3_1",
+  "sigma_2_1", "sigma_2_2", "sigma_3_2",
+  "sigma_3_1", "sigma_3_2", "sigma_3_3"
+)
+sigma_vech_names <- c(
+  "sigma_1_1", "sigma_2_1", "sigma_3_1",
+  "sigma_2_2", "sigma_3_2",
+  "sigma_3_3"
+)
+theta_names <- c(
+  "phi_1_1", "phi_2_1", "phi_3_1",
+  "phi_1_2", "phi_2_2", "phi_3_2",
+  "phi_1_3", "phi_2_3", "phi_3_3",
+  "sigma_1_1", "sigma_2_1", "sigma_3_1",
+  "sigma_2_2", "sigma_3_2",
+  "sigma_3_3"
+)
+phi <- matrix(
+  data = coefs[phi_names],
+  nrow = 3,
+  ncol = 3
+)
+colnames(phi) <- rownames(phi) <- c("x", "m", "y")
+sigma <- matrix(
+  data = coefs[sigma_names],
+  nrow = 3,
+  ncol = 3
+)
+theta <- coefs[theta_names]
+vcov_phi_vec <- vcovs[phi_names, phi_names]
+vcov_sigma_vech <- vcovs[sigma_vech_names, sigma_vech_names]
+vcov_theta <- vcovs[theta_names, theta_names]
+```
+
+### Estimated Drift Matrix with Corresponding Sampling Covariance Matrix
+
+```{r}
+phi
+vcov_phi_vec
+```
+
+### Process Noise Covariance Matrix with Corresponding Sampling Covariance Matrix
+
+```{r}
+sigma
+vcov_sigma_vech
+```
+
+### Estimated Drift Matrix and Process Noise Covariance Matrix with Corresponding Sampling Covariance Matrix
+
+```{r}
+theta
+vcov_theta
+```
+
+```{r}
+delta_t <- seq(from = 0.01, to = 10, length.out = 1000)
+```
+
+## Total Effect Centrality
+
+### Delta Method
+
+```{r}
+delta_total_central <- DeltaTotalCentral(
+  phi = phi,
+  vcov_phi_vec = vcov_phi_vec,
+  delta_t = delta_t
+)
+```
+
+```{r}
+plot(delta_total_central)
+```
+
+### Monte Carlo Method
+
+```{r}
+mc_total_central <- MCTotalCentral(
+  phi = phi,
+  vcov_phi_vec = vcov_phi_vec,
+  delta_t = delta_t,
+  R = 20000L
+)
+```
+
+```{r}
+plot(mc_total_central)
+```
+
+## Indirect Effect Centrality
+
+### Delta Method
+
+```{r}
+delta_indirect_central <- DeltaIndirectCentral(
+  phi = phi,
+  vcov_phi_vec = vcov_phi_vec,
+  delta_t = delta_t
+)
+```
+
+```{r}
+plot(delta_indirect_central)
+```
+
+### Monte Carlo Method
+
+```{r}
+mc_indirect_central <- MCIndirectCentral(
+  phi = phi,
+  vcov_phi_vec = vcov_phi_vec,
+  delta_t = delta_t,
+  R = 20000L
+)
+```
+
+```{r}
+plot(mc_indirect_central)
+```

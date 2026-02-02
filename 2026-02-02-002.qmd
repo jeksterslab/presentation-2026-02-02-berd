@@ -1,0 +1,79 @@
+---
+title: "Total and Indirect Effect Centrality Measures in CT-Med"
+format:
+  html:
+    embed-resources: true
+editor: source
+author: Ivan Jacob Agaloos Pesigan
+date: February 2, 2026
+---
+
+## Installing Required Packages
+
+Before proceeding, ensure that the necessary package are installed and loaded.
+We use `cTMed` for calculating total, direct, and indirect effects in continuous-time mediation model.
+
+```{r, include = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
+pkg <- c("dynr", "expm", "simStateSpace", "cTMed")
+for (i in seq_along(pkg)) {
+  if (!require(pkg[i], character.only = TRUE, quietly = TRUE)) {
+    install.packages(pkg[i], dependencies = TRUE)
+  }
+}
+```
+
+```{r}
+library(cTMed)
+```
+
+## Extracting Matrices for Use in `cTMed`
+
+We begin by defining the drift matrix `phi` ($\boldsymbol{\Phi}$).
+
+```{r}
+phi <- matrix(
+  data = c(
+    -0.357, 0.771, -0.450,
+    0.000, -0.511, 0.729,
+    0.000, 0.000, -0.693
+  ),
+  nrow = 3,
+  ncol = 3
+)
+phi
+```
+
+Next, we assign row and column names to `phi` ($\boldsymbol{\Phi}$), which will be used to index the matrix.
+
+```{r}
+colnames(phi) <- rownames(phi) <- c("x", "m", "y")
+phi
+```
+
+We then create a sequence of time intervals `delta_t` ($\Delta t$) ranging from 0.01 to 10, with a total of 1,000 equally spaced values.
+
+```{r}
+delta_t <- seq(from = 0.01, to = 10, length.out = 1000)
+```
+
+Let's calculate total and indirect effects centrality for the sequence of `delta_t` ($\Delta t$). We plot to visualize the dynamics.
+
+## Total Effect Centrality
+
+```{r}
+total_central <- TotalCentral(
+  phi = phi,
+  delta_t = delta_t
+)
+plot(total_central)
+```
+
+## Indirect Effect Centrality
+
+```{r}
+indirect_central <- IndirectCentral(
+  phi = phi,
+  delta_t = delta_t
+)
+plot(indirect_central)
+```
